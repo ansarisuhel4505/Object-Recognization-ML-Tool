@@ -10,6 +10,7 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  turbopack: {}, // 🚀 VERCEL BUILD ERROR FIX
 };
 
 export default withPWA(nextConfig);

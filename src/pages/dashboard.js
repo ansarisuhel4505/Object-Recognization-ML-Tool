@@ -2,255 +2,256 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import Link from 'next/link';
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   
-  // Data States
+  const [activeTab, setActiveTab] = useState('analytics'); // analytics, api, admin
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // 🚀 NAYA: Developer API States
   const [apiKey, setApiKey] = useState(null);
-  const [keyLoading, setKeyLoading] = useState(false);
+  
+  // Admin States
+  const [allUsers, setAllUsers] = useState([]);
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push('/');
-    }
-    
+    if (status === "unauthenticated") router.push('/');
     if (status === "authenticated") {
-      // Fetch History
-      fetch('/api/history')
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            setHistory(data.data);
-          }
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error("Failed to fetch history:", err);
-          setLoading(false);
-        });
-
-      // 🚀 NAYA: Fetch API Key
-      fetch('/api/developer/key')
-        .then(res => res.json())
-        .then(data => {
-          if(data.apiKey) setApiKey(data.apiKey);
-        })
-        .catch(err => console.error("Failed to fetch API key:", err));
+      fetch('/api/history').then(res => res.json()).then(data => data.success && setHistory(data.data));
+      fetch('/api/developer/key').then(res => res.json()).then(data => data.apiKey && setApiKey(data.apiKey));
+      
+      if (session?.user?.role === 'admin') {
+        fetchAdminUsers();
+      }
     }
-  }, [status, router]);
+  }, [status, router, session]);
 
-  // 🚀 NAYA: Generate API Key Function
-  const generateApiKey = async () => {
-    if(!confirm("Warning: Generating a new key will invalidate your old key. Continue?")) return;
-    setKeyLoading(true);
-    try {
-      const res = await fetch('/api/developer/key', { method: 'POST' });
-      const data = await res.json();
-      setApiKey(data.apiKey);
-    } catch (err) {
-      console.error("Error generating key:", err);
-    }
-    setKeyLoading(false);
+  const fetchAdminUsers = async () => {
+    const res = await fetch('/api/admin/users');
+    const data = await res.json();
+    if(data.success) setAllUsers(data.data);
   };
 
-  // 📊 PRO-LEVEL: CSV Export Functionality
-  const downloadCSVReport = () => {
-    const headers = "Date & Time,Detected Object,Confidence,Processing Time (ms),Cloud Image URL\n";
-    const rows = history.map(record => {
-      const date = new Date(record.createdAt).toLocaleString().replace(/,/g, '');
-      const label = record.detectedObjects[0]?.label || "Unknown";
-      const confidence = `${(record.detectedObjects[0]?.confidence * 100).toFixed(1)}%`;
-      const time = record.scanTime;
-      const url = record.imageUrl;
-      return `"${date}","${label}","${confidence}","${time}","${url}"`;
-    }).join("\n");
-
-    const csvContent = "data:text/csv;charset=utf-8," + headers + rows;
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Enterprise_AI_Scan_Report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleBlockToggle = async (userId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+    await fetch('/api/admin/users', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, status: newStatus })
+    });
+    fetchAdminUsers(); // Refresh list
   };
 
-  if (status === "loading" || loading) {
-    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-emerald-400 text-xl font-bold">Loading Dashboard Data...</div>;
-  }
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newUser)
+    });
+    const data = await res.json();
+    if(data.success) {
+      alert("User Created Successfully!");
+      setNewUser({ name: '', email: '', password: '', role: 'user' });
+      fetchAdminUsers();
+    } else {
+      alert(data.error);
+    }
+  };
+
+  if (status === "loading") return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-blue-500">Loading Workspace...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans py-10 px-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#0a0a0a] text-slate-300 font-sans py-8 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto">
         
-        {/* Dashboard Header */}
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-blue-400">
-              Analytics Dashboard
-            </h1>
-            <p className="text-slate-400 mt-1">Welcome back, {session?.user?.name}</p>
-          </div>
-        </div>
-
-        {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
-            <h3 className="text-slate-400 text-sm font-semibold uppercase">Total Scans</h3>
-            <p className="text-4xl font-bold text-white mt-2">{history.length}</p>
-          </div>
-          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
-            <h3 className="text-slate-400 text-sm font-semibold uppercase">Account Status</h3>
-            <p className="text-2xl font-bold text-emerald-400 mt-2 flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span> Pro Active
-            </p>
-          </div>
-          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
-            <h3 className="text-slate-400 text-sm font-semibold uppercase">Primary Email</h3>
-            <p className="text-lg font-medium text-white mt-2 truncate">{session?.user?.email}</p>
-          </div>
-        </div>
-
-        {/* 🚀 NAYA: Developer API Portal */}
-        <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl shadow-purple-500/10 mb-10 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-            <svg className="w-24 h-24 text-purple-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7.5l-10-5V17l10 5 10-5V4.5l-10 5z"></path></svg>
-          </div>
-          
-          <h2 className="text-xl font-bold text-white mb-2">Developer API Access</h2>
-          <p className="text-sm text-slate-400 mb-6">Integrate our AI model directly into your own applications using your secret API key.</p>
-          
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-6">
-            <div className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-3 flex justify-between items-center w-full">
-              <code className="text-sm font-mono text-emerald-400 truncate pr-4">
-                {apiKey ? apiKey : 'sk_live_********************************'}
-              </code>
-              {apiKey && (
-                <button onClick={() => {navigator.clipboard.writeText(apiKey); alert("API Key Copied!");}} className="text-slate-400 hover:text-white transition-colors" title="Copy to clipboard">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                </button>
-              )}
-            </div>
-            <button 
-              onClick={generateApiKey}
-              disabled={keyLoading}
-              className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap text-sm"
-            >
-              {keyLoading ? 'Generating...' : (apiKey ? 'Roll New Key' : 'Generate Secret Key')}
+        {/* Header & Tabs */}
+        <div className="mb-8 border-b border-white/10 pb-4">
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-6">Workspace Console</h1>
+          <div className="flex gap-6 overflow-x-auto custom-scrollbar">
+            <button onClick={() => setActiveTab('analytics')} className={`pb-3 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'analytics' ? 'border-blue-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
+              Overview & Analytics
             </button>
+            <button onClick={() => setActiveTab('api')} className={`pb-3 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'api' ? 'border-purple-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
+              Developer API
+            </button>
+            {session?.user?.role === 'admin' && (
+              <button onClick={() => setActiveTab('admin')} className={`pb-3 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'admin' ? 'border-red-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
+                User Management (Admin)
+              </button>
+            )}
           </div>
+        </div>
 
-          {/* Code Example */}
-          <div className="bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
-            <div className="bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-400 flex justify-between">
-              <span>cURL Example</span>
-              <span>POST /api/v1/scan</span>
+        {/* 📊 TAB 1: ANALYTICS */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#111111] border border-white/5 p-6 rounded-xl shadow-lg">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Total Invocations</p>
+                <p className="text-4xl font-black text-white">{history.length}</p>
+              </div>
+              <div className="bg-[#111111] border border-white/5 p-6 rounded-xl shadow-lg">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Workspace Tier</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <p className="text-xl font-bold text-emerald-400 uppercase tracking-wide">Enterprise</p>
+                </div>
+              </div>
+              <div className="bg-[#111111] border border-white/5 p-6 rounded-xl shadow-lg">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Active Session</p>
+                <p className="text-sm font-medium text-slate-300 truncate">{session?.user?.email}</p>
+                <p className="text-xs text-slate-500 mt-1 capitalize">Role: {session?.user?.role}</p>
+              </div>
             </div>
-            <pre className="p-4 text-xs font-mono text-blue-300 overflow-x-auto">
-{`curl -X POST https://yourdomain.com/api/v1/scan \\
+
+            {/* Chart */}
+            {history.length > 0 && (
+              <div className="bg-[#111111] border border-white/5 p-6 rounded-xl shadow-lg">
+                <h2 className="text-sm font-bold text-white uppercase tracking-widest mb-6">Object Detection Frequency</h2>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={Object.values(history.reduce((acc, curr) => {
+                        const label = curr.detectedObjects[0]?.label || "Unknown";
+                        if (!acc[label]) acc[label] = { name: label, count: 0 };
+                        acc[label].count += 1;
+                        return acc;
+                      }, {})).sort((a, b) => b.count - a.count).slice(0, 5)}>
+                      <XAxis dataKey="name" stroke="#475569" fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip cursor={{ fill: '#1e293b' }} contentStyle={{ backgroundColor: '#0a0a0a', borderColor: '#1e293b', borderRadius: '8px' }} />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                        {history.map((_, i) => <Cell key={`cell-${i}`} fill="#3b82f6" />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 🔑 TAB 2: DEVELOPER API */}
+        {activeTab === 'api' && (
+          <div className="bg-[#111111] border border-purple-500/20 p-8 rounded-xl shadow-lg animate-fade-in border-l-4 border-l-purple-500">
+            <h2 className="text-xl font-bold text-white mb-2">Production API Keys</h2>
+            <p className="text-sm text-slate-400 mb-8">Do not share your API key in publicly accessible areas such as GitHub, client-side code, etc.</p>
+            
+            <div className="mb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">Secret Key</div>
+            <div className="flex gap-3 mb-8">
+              <div className="flex-1 bg-[#050505] border border-white/10 rounded-lg p-3 font-mono text-sm text-purple-400 tracking-wider">
+                {apiKey || 'sk_live_********************************'}
+              </div>
+              <button className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                Copy
+              </button>
+            </div>
+
+            <div className="bg-[#050505] border border-white/5 rounded-lg overflow-hidden">
+              <div className="bg-[#1a1a1a] px-4 py-2 text-xs font-mono text-slate-500 flex justify-between border-b border-white/5">
+                <span>cURL Request</span>
+                <span>POST /api/v1/scan</span>
+              </div>
+              <pre className="p-4 text-xs font-mono text-blue-400 overflow-x-auto">
+{`curl -X POST https://api.visionai.com/v1/scan \\
   -H "Authorization: Bearer ${apiKey || 'YOUR_API_KEY'}" \\
   -H "Content-Type: application/json" \\
-  -d '{ "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJ..." }'`}
-            </pre>
-          </div>
-        </div>
-
-        {/* 📊 PRO-LEVEL: AI Object Detection Analytics Chart */}
-        {history.length > 0 && (
-          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl mb-10">
-            <h2 className="text-xl font-bold text-slate-200 mb-6">Detection Frequency Analytics</h2>
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={
-                    Object.values(history.reduce((acc, curr) => {
-                      const label = curr.detectedObjects[0]?.label || "Unknown";
-                      if (!acc[label]) acc[label] = { name: label, count: 0 };
-                      acc[label].count += 1;
-                      return acc;
-                    }, {})).sort((a, b) => b.count - a.count).slice(0, 5) 
-                  }
-                  margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
-                >
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                  <Tooltip 
-                    cursor={{ fill: '#334155' }} 
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff' }} 
-                  />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {
-                      history.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899'][index % 5]} />
-                      ))
-                    }
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+  -d '{ "image": "base64_string" }'`}
+              </pre>
             </div>
           </div>
         )}
 
-        {/* History Table with Export Button */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-slate-200">Recent API Invocations</h2>
-            <button 
-              onClick={downloadCSVReport}
-              disabled={history.length === 0}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Export CSV Report
-            </button>
-          </div>
-          
-          {history.length === 0 ? (
-            <div className="p-10 text-center text-slate-400">
-              No scans found. Go to the scanner and test the AI!
+        {/* 🛡️ TAB 3: ADMIN MANAGEMENT (Only for Admins) */}
+        {activeTab === 'admin' && session?.user?.role === 'admin' && (
+          <div className="space-y-6 animate-fade-in">
+            
+            {/* Create User Form */}
+            <div className="bg-[#111111] border border-red-500/20 p-6 rounded-xl shadow-lg border-t-4 border-t-red-500">
+              <h2 className="text-lg font-bold text-white mb-4">Provision New Account</h2>
+              <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div className="md:col-span-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Name</label>
+                  <input required type="text" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-red-500 focus:outline-none" placeholder="Student Name" />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Email (Official)</label>
+                  <input required type="email" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-red-500 focus:outline-none" placeholder="student@college.edu" />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Password</label>
+                  <input required type="password" value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-red-500 focus:outline-none" placeholder="••••••••" />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Role</label>
+                  <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-red-500 focus:outline-none">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div className="md:col-span-1">
+                  <button type="submit" className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-lg text-sm transition-colors">
+                    Create User
+                  </button>
+                </div>
+              </form>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-900/50 text-slate-400 text-sm uppercase tracking-wider">
-                    <th className="p-4 font-semibold">Date & Time</th>
-                    <th className="p-4 font-semibold">Detected Object</th>
-                    <th className="p-4 font-semibold">Confidence</th>
-                    <th className="p-4 font-semibold">Processing Time</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700/50">
-                  {history.map((record) => (
-                    <tr key={record._id} className="hover:bg-slate-700/20 transition-colors">
-                      <td className="p-4 text-slate-300">
-                        {new Date(record.createdAt).toLocaleString()}
-                      </td>
-                      <td className="p-4">
-                        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-sm font-medium">
-                          {record.detectedObjects[0]?.label || "Unknown"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-slate-300">
-                        {(record.detectedObjects[0]?.confidence * 100).toFixed(1)}%
-                      </td>
-                      <td className="p-4 text-slate-400 text-sm font-mono">
-                        {record.scanTime} ms
-                      </td>
+
+            {/* Users List Table */}
+            <div className="bg-[#111111] border border-white/5 rounded-xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-white/5 bg-[#1a1a1a]">
+                <h2 className="text-sm font-bold text-white uppercase tracking-widest">Active & Suspended Accounts</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#0a0a0a] text-slate-500 text-xs uppercase tracking-wider border-b border-white/5">
+                      <th className="p-4 font-semibold">User Details</th>
+                      <th className="p-4 font-semibold">Role</th>
+                      <th className="p-4 font-semibold">Status</th>
+                      <th className="p-4 font-semibold text-right">Admin Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {allUsers.map((u) => (
+                      <tr key={u._id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4">
+                          <p className="text-sm font-bold text-white">{u.name}</p>
+                          <p className="text-xs text-slate-500">{u.email}</p>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${u.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                            <span className={`text-xs font-bold uppercase tracking-wider ${u.status === 'active' ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {u.status}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          {u.email !== session?.user?.email && (
+                            <button 
+                              onClick={() => handleBlockToggle(u._id, u.status)}
+                              className={`text-xs font-bold px-3 py-1.5 rounded-md transition-colors ${u.status === 'active' ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'}`}
+                            >
+                              {u.status === 'active' ? 'Block Access' : 'Unblock User'}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
-        </div>
+            
+          </div>
+        )}
 
       </div>
     </div>

@@ -278,9 +278,11 @@ export default function Home() {
                 <img src={preview} alt="Target" className="w-full max-h-64 object-contain" />
                 
                 {/* 🚀 ASLI XAI HEATMAP (Python se aaya hua) */}
-                {showHeatmap && heatmapData ? (
+                {showHeatmap && heatmapData && (
                   <img src={heatmapData} className="absolute inset-0 w-full h-full object-fill z-10 mix-blend-screen opacity-70 pointer-events-none" />
-                ) : showHeatmap && !heatmapData ? (
+                )}
+                
+                {showHeatmap && !heatmapData && (
                   <div className="absolute inset-0 z-10 mix-blend-screen opacity-80 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,0,0,0.8) 0%, transparent 100%)' }}></div>
                 )}
 

@@ -43,7 +43,7 @@ export default function Home() {
           const liveFrame = canvas.toDataURL('image/jpeg', 0.6); 
 
           try {
-            const response = await fetch('http://localhost:8000/api/analyze', {
+            const response = await fetch('http://https://object-recognization-ml-tool.onrender.com/api/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
@@ -181,14 +181,14 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/analyze', {
+      const response = await fetch('http://https://object-recognization-ml-tool.onrender.com/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image, email: session?.user?.email, modelVersion: 'v1.0' }),
       });
       
       setTimeout(() => {
-        fetch('http://localhost:8000/api/analyze', {
+        fetch('http://https://object-recognization-ml-tool.onrender.com/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image, email: session?.user?.email, modelVersion: 'v1.1-shadow' }),

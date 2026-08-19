@@ -29,7 +29,7 @@ export default function Navbar() {
               <>
                 <Link href="/" className={`font-semibold transition-colors ${router.pathname === '/' ? 'text-blue-400' : 'text-slate-300 hover:text-white'}`}>Scanner</Link>
                 <Link href="/batch" className={`font-semibold transition-colors ${router.pathname === '/batch' ? 'text-blue-400' : 'text-slate-300 hover:text-white'}`}>Batch Scan</Link>
-                <Link href="/dashboard" className={`font-semibold transition-colors ${router.pathname === '/dashboard' ? 'text-emerald-400' : 'text-slate-300 hover:text-white'}`}>Dashboard</Link>
+                <Link href="/admin" className={`font-semibold transition-colors ${router.pathname === '/admin' ? 'text-emerald-400' : 'text-slate-300 hover:text-white'}`}>Admin</Link>
                 <Link href="/automl" className={`font-semibold transition-colors ${router.pathname === '/automl' ? 'text-orange-400' : 'text-slate-300 hover:text-white'}`}>AutoML Studio</Link>
                 {/* Agar user admin hai, toh Admin Panel ka link dikhega */}
                 {session?.user?.role === 'admin' && (
@@ -91,7 +91,7 @@ export default function Navbar() {
                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-700">Scanner</Link>
                 <Link href="/batch" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-700">Batch Scan</Link>
                 <Link href="/automl" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-orange-400 hover:text-orange-300 hover:bg-slate-700">AutoML Studio</Link>
-                <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-700">Dashboard</Link>
+                <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-700">Admin</Link>
                 <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-blue-400 hover:text-blue-300 hover:bg-slate-700">Profile & API Settings</Link>
                 {session?.user?.role === 'admin' && (
                   <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-purple-400 hover:text-purple-300 hover:bg-slate-700">Admin Panel</Link>

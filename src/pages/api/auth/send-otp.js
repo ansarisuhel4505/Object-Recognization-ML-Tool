@@ -1,6 +1,6 @@
-import dbConnect from '../../../../lib/mongodb';
-import Otp from '../../../../models/Otp';
-import User from '../../../../models/User';
+import dbConnect from '../../../lib/mongodb';
+import Otp from '../../../models/Otp';
+import User from '../../../models/User';
 import nodemailer from 'nodemailer';
 
 // 🚀 STRICT ALLOWLIST: Sirf inhi domains par OTP jayega

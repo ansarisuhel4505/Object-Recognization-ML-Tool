@@ -1,5 +1,5 @@
-import dbConnect from '../../../../lib/mongodb';
-import User from '../../../../models/User';
+import dbConnect from '../../../lib/mongodb';
+import User from '../../../models/User';
 import Cors from 'cors';
 
 // Initialize CORS middleware so external apps can call this API

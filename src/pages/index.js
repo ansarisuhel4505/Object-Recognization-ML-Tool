@@ -239,9 +239,14 @@ export default function Home() {
       <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-xl shadow-2xl relative overflow-hidden">
         
         <div className="flex gap-4 mb-6">
-          <button onClick={() => {setIsCameraOpen(false); setImage(null); setPreview(null);}} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${!isCameraOpen && !preview ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-            📁 Upload File
-          </button>
+          <button onClick={() => {
+    setIsCameraOpen(false); 
+    setImage(null); 
+    setPreview(null);
+    if(fileInputRef.current) fileInputRef.current.click(); // 🚀 YEH LINE ADD KI HAI
+}} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${!isCameraOpen && !preview ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
+  📁 Upload File
+</button>
           <button onClick={startCamera} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${isCameraOpen ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
             📷 Live Camera
           </button>

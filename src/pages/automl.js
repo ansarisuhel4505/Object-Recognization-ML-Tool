@@ -1,169 +1,31 @@
-import { useState, useRef, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 export default function AutoMLStudio() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
-  
-  const [className, setClassName] = useState('');
-  const [images, setImages] = useState([]);
-  const [trainingStatus, setTrainingStatus] = useState('idle'); // idle, training, completed
-  const [progress, setProgress] = useState(0);
-  const [logs, setLogs] = useState([]);
-  
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push('/');
   }, [status, router]);
 
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    
-    const newImages = files.map(file => URL.createObjectURL(file));
-    setImages(prev => [...prev, ...newImages].slice(0, 20)); // Max 20 images for UI demo
-  };
-
-  const startTraining = () => {
-    if(!className || images.length < 3) {
-      alert("Please enter a class name and upload at least 3 images.");
-      return;
-    }
-    
-    setTrainingStatus('training');
-    setProgress(0);
-    setLogs(["Initializing AutoML Pipeline...", "Allocating Cloud GPU (NVIDIA A100)..."]);
-
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 10;
-      setProgress(currentProgress);
-      
-      const newLogs = [];
-      if (currentProgress === 20) newLogs.push("Extracting features from uploaded dataset...");
-      if (currentProgress === 40) newLogs.push("Applying Transfer Learning (ResNet-50 Base)...");
-      if (currentProgress === 60) newLogs.push("Epoch 5/10: Loss: 0.241 - Accuracy: 89%");
-      if (currentProgress === 80) newLogs.push("Epoch 10/10: Loss: 0.052 - Accuracy: 98.7%");
-      if (currentProgress === 100) {
-        newLogs.push(`Model successfully trained to recognize: [${className.toUpperCase()}]`);
-        clearInterval(interval);
-        setTrainingStatus('completed');
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.speak(new SpeechSynthesisUtterance(`AutoML training complete for ${className}`));
-        }
-      }
-      
-      if(newLogs.length > 0) {
-        setLogs(prev => [...prev, ...newLogs]);
-      }
-    }, 1000);
-  };
-
-  if (status === "loading") return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-emerald-400 font-bold">Loading Studio...</div>;
-
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans py-10 px-6">
-      <div className="max-w-5xl mx-auto">
-        
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-pink-500">
-            AutoML Training Studio
-          </h1>
-          <p className="text-slate-400 mt-1">Train the AI model on your custom objects using Transfer Learning.</p>
+    <div className="min-h-screen bg-slate-900 text-white font-sans flex flex-col items-center justify-center py-10 px-6">
+      <div className="max-w-2xl text-center">
+        <div className="w-24 h-24 bg-blue-900/40 rounded-full flex items-center justify-center mx-auto mb-8 border border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.3)]">
+          <svg className="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
-          {/* Left Column: Input Data */}
-          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl h-fit">
-            <h2 className="text-xl font-bold mb-4">1. Dataset Configuration</h2>
-            
-            <div className="mb-6">
-              <label className="text-sm font-semibold text-slate-400">Custom Object Name (Class Label)</label>
-              <input 
-                type="text" 
-                placeholder="e.g. Defective Gear, My Company Logo" 
-                value={className}
-                onChange={(e) => setClassName(e.target.value)}
-                disabled={trainingStatus !== 'idle'}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 mt-2 text-white focus:outline-none focus:border-orange-500 transition-colors"
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="text-sm font-semibold text-slate-400 mb-2 block">Upload Training Images (Min: 3, Max: 20)</label>
-              <div 
-                onClick={() => trainingStatus === 'idle' && fileInputRef.current.click()}
-                className={`border-2 border-dashed border-slate-600 rounded-xl p-8 text-center transition-all ${trainingStatus === 'idle' ? 'cursor-pointer hover:bg-slate-700/50 hover:border-orange-500' : 'opacity-50 cursor-not-allowed'}`}
-              >
-                <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" multiple className="hidden" />
-                <svg className="w-10 h-10 text-slate-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <p className="text-slate-300 font-medium">Click to upload training dataset</p>
-                <p className="text-xs text-slate-500 mt-1">{images.length} images selected</p>
-              </div>
-            </div>
-
-            {images.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-6">
-                {images.map((src, i) => (
-                  <img key={i} src={src} alt="train-data" className="w-12 h-12 object-cover rounded-md border border-slate-600" />
-                ))}
-              </div>
-            )}
-
-            <button 
-              onClick={startTraining}
-              disabled={trainingStatus !== 'idle'}
-              className="w-full bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {trainingStatus === 'idle' ? '🚀 Initialize Model Training' : 'Training Locked'}
-            </button>
-          </div>
-
-          {/* Right Column: Training Progress */}
-          <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl flex flex-col relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-32 opacity-5 pointer-events-none">
-              <svg className="w-full h-full text-orange-400 animate-spin-slow" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7.5l-10-5V17l10 5 10-5V4.5l-10 5z"></path></svg>
-            </div>
-
-            <h2 className="text-xl font-bold mb-4 z-10">2. MLOps Training Output</h2>
-            
-            <div className="flex-grow bg-black/50 border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-y-auto mb-6 z-10 h-64">
-              {logs.length === 0 ? (
-                <span className="text-slate-600">Waiting for dataset configuration...</span>
-              ) : (
-                logs.map((log, i) => (
-                  <div key={i} className="mb-2 flex gap-2">
-                    <span className="text-emerald-500">[{new Date().toLocaleTimeString()}]</span>
-                    <span className="text-slate-300">{log}</span>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="z-10 mt-auto">
-              <div className="flex justify-between text-xs font-bold mb-2">
-                <span className="text-slate-400">Training Progress</span>
-                <span className={progress === 100 ? 'text-emerald-400' : 'text-orange-400'}>{progress}%</span>
-              </div>
-              <div className="w-full bg-slate-800 rounded-full h-3 border border-slate-700 overflow-hidden">
-                <div 
-                  className={`h-full transition-all duration-500 ease-out ${progress === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-orange-500 to-pink-500'}`} 
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {trainingStatus === 'completed' && (
-              <button onClick={() => {setTrainingStatus('idle'); setProgress(0); setImages([]); setClassName(''); setLogs([]);}} className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-lg transition-colors border border-slate-600 z-10">
-                Train Another Object
-              </button>
-            )}
-          </div>
-
-        </div>
+        <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 mb-4">
+          AutoML Studio <span className="text-blue-500 text-lg align-top font-bold uppercase tracking-widest border border-blue-500/30 px-2 py-1 rounded bg-blue-500/10 ml-2">Beta</span>
+        </h1>
+        <p className="text-slate-400 text-lg mb-10 leading-relaxed">
+          Custom Neural Network training is currently offloaded to our secure high-performance GPU clusters. The web interface for dataset management and hyperparameter tuning is undergoing an enterprise upgrade.
+        </p>
+        <button className="bg-slate-800 border border-slate-700 text-slate-300 px-8 py-4 rounded-xl font-bold cursor-not-allowed flex items-center gap-3 mx-auto shadow-inner">
+          <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          System Upgrading for V2.0...
+        </button>
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
-import dbConnect from '../../../../lib/mongodb';
-import User from '../../../../models/User';
-import Otp from '../../../../models/Otp';
+import dbConnect from '../../../lib/mongodb';
+import User from '../../../models/User';
+import Otp from '../../../models/Otp';
 import bcrypt from 'bcryptjs';
+
+// ... baaki ka poora code same rahega ...
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();

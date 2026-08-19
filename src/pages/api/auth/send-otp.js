@@ -1,8 +1,10 @@
-import dbConnect from '../../../../lib/mongodb';
-import Otp from '../../../../models/Otp';
-import User from '../../../../models/User';
+import dbConnect from '../../../lib/mongodb';
+import Otp from '../../../models/Otp';
+import User from '../../../models/User';
 import nodemailer from 'nodemailer';
 
+// Fake Email Domains List (Temp mails)
+// ... baaki ka poora code same rahega ...
 // Fake Email Domains List (Temp mails)
 const BLOCKED_DOMAINS = ['tempmail.com', '10minutemail.com', 'guerrillamail.com', 'mailinator.com', 'yopmail.com', 'throwawaymail.com'];
 

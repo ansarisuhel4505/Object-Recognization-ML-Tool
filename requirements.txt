@@ -1,7 +1,9 @@
-scikit-learn
-numpy
-joblib
+fastapi
+uvicorn
+ultralytics
+opencv-python-headless
+python-multipart
+pydantic
 Pillow
+numpy
 pymongo
-dnspython
-cloudinary

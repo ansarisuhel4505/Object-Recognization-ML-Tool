@@ -1,18 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import { useRouter } from 'next/router';
-import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
-// PDF.js Worker setup for Next.js
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-}
+// 🚀 FIX: Upar se pdf.js ka import hata diya taaki Vercel server crash na ho!
 
 export default function BatchScanner() {
   const { data: session, status } = useSession();
   const router = useRouter();
   
-  const [items, setItems] = useState([]); // File/Page list
+  const [items, setItems] = useState([]); 
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -34,6 +30,11 @@ export default function BatchScanner() {
         newItems.push({ id: Math.random().toString(), name: file.name, image: base64, status: 'pending', result: null });
       } 
       else if (file.type === 'application/pdf') {
+        // 🚀 DYNAMIC IMPORT: Vercel Error Fix
+        // Ab library sirf tabhi load hogi jab user PDF upload karega (Client-side only)
+        const pdfjsLib = await import('pdfjs-dist/build/pdf');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
         // Handle PDF Pages
         const pdfBytes = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
@@ -73,7 +74,7 @@ export default function BatchScanner() {
     let currentItems = [...items];
 
     for (let i = 0; i < currentItems.length; i++) {
-      if (currentItems[i].status === 'success') continue; // Skip already done
+      if (currentItems[i].status === 'success') continue; 
 
       // Set to loading
       currentItems[i].status = 'loading';

@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python Backend Ignores
+python-backend/__pycache__/
+python-backend/yolov8n.pt

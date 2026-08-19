@@ -36,20 +36,25 @@ export default function Navbar() {
                    <Link href="/admin" className="font-semibold text-purple-400 hover:text-purple-300 transition-colors">Admin Panel</Link>
                 )}
                 <div className="h-6 w-px bg-slate-700 mx-2"></div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
+                <div className="flex items-center gap-4">
+                  <Link href="/profile" className="text-right hover:bg-slate-800 p-2 rounded-lg transition-colors cursor-pointer">
                     <p className="text-sm font-bold text-white leading-tight">{session.user.name || "Pro User"}</p>
-                    <p className="text-xs text-slate-400">{session.user.role === 'admin' ? 'Administrator' : 'Standard User'}</p>
-                  </div>
+                    <p className="text-xs text-blue-400">Profile & API Key</p>
+                  </Link>
                   <button onClick={() => signOut()} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-red-500/20">
                     Logout
                   </button>
                 </div>
               </>
             ) : (
-              <button onClick={() => signIn()} className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-lg shadow-blue-500/25">
-                Secure Login
-              </button>
+              <div className="flex items-center gap-4">
+                <button onClick={() => signIn()} className="text-slate-300 hover:text-white font-bold px-4 py-2 transition-colors">
+                  Login
+                </button>
+                <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-lg shadow-blue-500/25">
+                  Create Account
+                </Link>
+              </div>
             )}
           </div>
 
@@ -87,17 +92,23 @@ export default function Navbar() {
                 <Link href="/batch" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-700">Batch Scan</Link>
                 <Link href="/automl" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-orange-400 hover:text-orange-300 hover:bg-slate-700">AutoML Studio</Link>
                 <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-700">Dashboard</Link>
+                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-blue-400 hover:text-blue-300 hover:bg-slate-700">Profile & API Settings</Link>
                 {session?.user?.role === 'admin' && (
                   <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 rounded-md text-base font-medium text-purple-400 hover:text-purple-300 hover:bg-slate-700">Admin Panel</Link>
                 )}
-                <button onClick={() => signOut()} className="w-full text-left mt-4 px-3 py-3 rounded-md text-base font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20">
+                <button onClick={() => signOut()} className="w-full text-left mt-4 px-3 py-3 rounded-md text-base font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20">
                   Logout System
                 </button>
               </>
             ) : (
-              <button onClick={() => signIn()} className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white px-3 py-3 rounded-md text-base font-bold text-center">
-                Secure Login
-              </button>
+              <div className="flex flex-col gap-3 mt-4">
+                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)} className="w-full bg-blue-600 hover:bg-blue-500 text-white px-3 py-3 rounded-md text-base font-bold text-center">
+                  Create Account
+                </Link>
+                <button onClick={() => signIn()} className="w-full bg-slate-700 hover:bg-slate-600 text-white px-3 py-3 rounded-md text-base font-bold text-center">
+                  Secure Login
+                </button>
+              </div>
             )}
           </div>
         </div>
